@@ -148,7 +148,12 @@ const dotR = 4
 function dotColor(i: number) {
   const m = props.markers?.find(m => m.i === i)
   if (!m) return colors.dots.default
-  return colors.dots[m.type || 'default'] || colors.dots.default
+
+  if (m.type && m.type in colors.dots) {
+    // @ts-ignore
+    return colors.dots[m.type as string]
+  }
+  return colors.dots.default
 }
 function dotOpacity(i: number) {
   const m = props.markers?.find(m => m.i === i)
