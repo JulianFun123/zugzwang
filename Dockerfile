@@ -6,7 +6,7 @@ RUN npm install -g pnpm
 
 
 COPY . .
-RUN pnpm ci
+RUN pnpm install
 RUN pnpm run build
 
 # Serve with Nginx
