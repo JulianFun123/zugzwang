@@ -1,0 +1,12 @@
+@import "@fontsource/plus-jakarta-sans";
+@import "tailwindcss";
+@import "@tabler/icons-webfont/dist/tabler-icons-filled.css";
+@import "@tabler/icons-webfont/dist/tabler-icons-outline.css";
+
+html, body, #app {
+    height: 100%;
+}
+
+:root {
+    font-family : "Plus Jakarta Sans", sans-serif;
+}
