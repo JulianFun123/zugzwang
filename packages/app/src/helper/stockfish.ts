@@ -8,7 +8,7 @@ export const stockfishLoaded = createDeferred()
 
 export const initStockfish = async () => {
 
-    sf = new Worker(new URL('/assets/engines/stockfish-17/stockfish-17-lite.js?url', import.meta.url))
+    sf = new Worker('/assets/engines/stockfish-17/stockfish-17-lite.js')
 
     //sf.addEventListener('message', m => console.log('sf', m.data))
     await sfWaitFor('uci', m => m === 'uciok')
