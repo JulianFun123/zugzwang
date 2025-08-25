@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Chessboard from "chessboard";
+import Chessboard from 'chessboard/src/Chessboard.vue';
 import type {ChessGame} from "@/chesscomtypes.ts";
 import {onMounted, onUnmounted, ref, useTemplateRef, watch} from "vue";
 import { parse as pgnParse } from '@mliebelt/pgn-parser'

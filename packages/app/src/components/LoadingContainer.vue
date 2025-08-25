@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Chessboard from "chessboard";
+import Chessboard from 'chessboard/src/Chessboard.vue';
 import {useTemplateRef} from "vue";
 import {useInterval, useIntervalFn} from "@vueuse/core";
 const chessboard = useTemplateRef<typeof Chessboard>('chessboard')
