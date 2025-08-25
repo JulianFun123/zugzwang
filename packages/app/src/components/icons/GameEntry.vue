@@ -68,11 +68,11 @@ onUnmounted(() => {
     </div>
     <div>
       <div class="flex flex-wrap gap-1 mb-2">
-        <div v-if="game.time_control" class="flex gap-1 items-center bg-neutral-100 rounded-full p-0.5 px-2 text-sm">
+        <div v-if="game.time_control" class="flex gap-1 items-center bg-neutral-100 dark:bg-neutral-700 rounded-full p-0.5 px-2 text-sm">
           <i class="ti ti-clock" />
           <span>{{ Number(game.time_control) / 60 }} min</span>
         </div>
-        <div class="flex gap-1 items-center bg-neutral-100 rounded-full p-0.5 px-2 text-sm" v-if="parsed?.tags?.UTCDate?.value">
+        <div class="flex gap-1 items-center bg-neutral-100 dark:bg-neutral-700 rounded-full p-0.5 px-2 text-sm" v-if="parsed?.tags?.UTCDate?.value">
           <i class="ti ti-calendar-event" />
           <span>{{parsed?.tags?.UTCDate?.value}}</span>
         </div>

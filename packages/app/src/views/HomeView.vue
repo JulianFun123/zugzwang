@@ -234,17 +234,17 @@ onKeyStroke('ArrowUp', () => {
 <template>
   <main class="h-full w-full">
     <div class="flex justify-center w-full h-full gap-3">
-      <div class="border border-neutral-200 rounded-xl h-full overflow-auto p-2">
+      <div class="border border-neutral-200 dark:border-neutral-800 rounded-xl h-full overflow-auto p-2">
         <div class="flex flex-col gap-5">
           <div class="flex gap-2">
-            <input v-if="provider !== 'pgn'" v-model="username" class="p-2 px-3 border border-neutral-200 rounded-md" placeholder="Chess.com Username" />
-            <select v-model="provider" class="p-2 px-2 border border-neutral-200 rounded-md" :class="{'w-full': provider === 'pgn'}">
+            <input v-if="provider !== 'pgn'" v-model="username" class="p-2 px-3 border border-neutral-200 dark:border-neutral-700 rounded-md" placeholder="Chess.com Username" />
+            <select v-model="provider" class="p-2 px-2 border border-neutral-200 dark:border-neutral-700 rounded-md" :class="{'w-full': provider === 'pgn'}">
               <option v-for="p of providers" :key="p" :value="p">{{p}}</option>
             </select>
           </div>
           <template v-if="provider === 'pgn'">
-            <textarea v-model="localPgn" class="p-2 px-3 border border-neutral-200 rounded-md" placeholder="PGN" />
-            <button @click="addLocalGame" class="p-2 bg-black text-white w-full rounded-md">Add</button>
+            <textarea v-model="localPgn" class="p-2 px-3 border border-neutral-200 dark:border-neutral-800 rounded-md" placeholder="PGN" />
+            <button @click="addLocalGame" class="p-2 bg-black text-white dark:bg-white dark:text-black w-full rounded-md">Add</button>
           </template>
           <LoadingContainer v-if="loadingGames" />
           <GameEntry v-for="game of games" :game @click="loadGame(game)" />
@@ -253,12 +253,12 @@ onKeyStroke('ArrowUp', () => {
       </div>
       <EvalBar :evaluation="positionEvaluations[currentMoveIndex]" />
       <div class="flex gap-2 flex-col justify-between">
-        <BoardUser :player="blackPlayer" />
+        <BoardUser :player="blackPlayer" :is-turn="currentMoveIndex % 2 === 0" />
         <Chessboard ref="chessboard" assets-path="/assets/piece/maestro/" width="700px" />
-        <BoardUser :player="whitePlayer" />
+        <BoardUser :player="whitePlayer" :is-turn="currentMoveIndex % 2 === 1" />
       </div>
 
-      <div class="border border-neutral-200 rounded-xl h-full overflow-auto">
+      <div class="border border-neutral-200 dark:border-neutral-800 rounded-xl h-full overflow-auto">
         <div>
           <GameEvaluation
             :data="positionEvaluations.map(e => -e.cp)"
@@ -276,7 +276,7 @@ onKeyStroke('ArrowUp', () => {
             <div v-if="(index % 2) === 0" class="pr-2 text-left">
               <span class="opacity-50">{{Math.floor(index / 2) + 1}}.</span>
             </div>
-            <button class="flex items-center px-1" @click="setMove(index)" :class="{'bg-blue-100 rounded-md': index === currentMoveIndex}">
+            <button class="flex items-center px-1" @click="setMove(index)" :class="{'bg-blue-100 dark:text-black rounded-md': index === currentMoveIndex}">
               <span>{{move}}</span>
             </button>
             <div v-if="(index % 2) === 0" class="pr-2 text-left" />

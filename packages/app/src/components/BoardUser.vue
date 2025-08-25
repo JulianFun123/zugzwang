@@ -5,7 +5,8 @@ defineProps<{
     time: string;
     rating: number;
     avatar: string;
-  }
+  },
+  isTurn: boolean
 }>()
 </script>
 <template>
@@ -20,7 +21,7 @@ defineProps<{
               <span class="opacity-50">{{player.rating}}</span>
             </span>
     </div>
-    <div class="border border-neutral-200 rounded-md px-3 flex items-center justify-center" :class="{'bg-neutral-800 text-white': currentMoveIndex % 2 === 0}">
+    <div class="border border-neutral-200 rounded-md px-3 flex items-center justify-center" :class="{'bg-neutral-800 text-white': isTurn}">
       <span>{{player.time}}</span>
     </div>
   </div>

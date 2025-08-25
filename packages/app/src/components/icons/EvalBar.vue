@@ -7,7 +7,7 @@ defineProps<{
 </script>
 <template>
 
-  <div class="w-4  h-full border border-neutral-200 rounded-full relative">
+  <div class="w-4  h-full border border-neutral-200 rounded-full relative dark:border-neutral-800 bg-white/80">
     <div
       v-if="evaluation"
       class="w-full bg-neutral-700 rounded-full transition-all"

@@ -5,6 +5,7 @@
 
 html, body, #app {
     height: 100%;
+    @apply dark:bg-neutral-950 dark:text-white;
 }
 
 :root {

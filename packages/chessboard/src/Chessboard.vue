@@ -282,6 +282,12 @@ defineExpose({
   border: 1px solid #E4E4E4;
   border-radius: 10px;
 
+
+  @media (prefers-color-scheme: dark) {
+    background: #cacaca;
+    border-color: #404040;
+  }
+
   .chessboard-evaluation-mark {
     width: 28px;
     aspect-ratio: 1 / 1;
@@ -349,6 +355,10 @@ defineExpose({
           height: 30%;
           background: #66666655;
           border-radius: 100%;
+
+          @media (prefers-color-scheme: dark) {
+            background: #EEEEEE66;
+          }
         }
       }
 
@@ -363,6 +373,9 @@ defineExpose({
       &:nth-child(odd) .chessboard-square:nth-child(even),
       &:nth-child(even) .chessboard-square:nth-child(odd) {
         background: #E4E4E4;
+        @media (prefers-color-scheme: dark) {
+          background: #5c5c5c;
+        }
       }
     }
   }
