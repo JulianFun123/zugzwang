@@ -48,7 +48,9 @@ const loadUser = useDebounceFn(async () => {
   loadingGames.value = true
   if (provider.value === 'chess.com') {
     let chessAPI = new ChessWebAPI();
-    games.value = (await chessAPI.getPlayerCompleteMonthlyArchives(username.value, 2025, 8)).body.games.slice(0,15).reverse()
+    const g = (await chessAPI.getPlayerCompleteMonthlyArchives(username.value, 2025, 8)).body.games
+    g.reverse()
+    games.value = g.slice(0,15)
   } else if (provider.value === 'lichess') {
     const res = await fetch(`https://lichess.org/api/games/user/${username.value}?&max=10&pgnInJson=true&sort=dateDesc&clocks=true`, {
       headers: {
@@ -139,7 +141,7 @@ const analyzeCompleteGame = async () => {
     const evaluation = await getEvalForPos(chessInstance.fen(), a)
     positionEvaluations.value.push(evaluation!)
 
-    if (i > 0) {
+    if (i > 0 && (positionEvaluations.value[i-1]?.cp ?? false) && (evaluation?.cp ?? false)) {
       const ev = evaluateMove(positionEvaluations.value[i-1].cp, evaluation!.cp, a, chessInstance.fen())
       moveEvaluations.value.push(ev)
     }
