@@ -14,34 +14,108 @@ import {
   initStockfish,
   sf,
   sfWaitFor,
-  stockfishLoaded, cpToPercent
+  stockfishLoaded
 } from "@/helper/stockfish.ts";
 import {evaluateMove, type MoveEvaluation} from "@/helper/evaluation.ts";
+import BoardUser from "@/components/BoardUser.vue";
+import EvalBar from "@/components/icons/EvalBar.vue";
+import GameEntry from "@/components/icons/GameEntry.vue";
+import LoadingContainer from "@/components/LoadingContainer.vue";
 
 const moves = ref<string[]>([])
 const clockTimes = ref<string[]>([])
 const whitePlayer = ref({username: 'white', time: '10', rating: 1500, avatar: 'https://accounts.interaapps.de/avatars/Q.png'})
 const blackPlayer = ref({username: 'black', time: '10', rating: 1500, avatar: 'https://accounts.interaapps.de/avatars/Q.png'})
 
+const providers = ['chess.com', 'lichess', 'pgn'] as const
+type Provider = (typeof providers)[number]
+const provider = useStorage<Provider>('provider', 'chess.com', localStorage)
+
 const positionEvaluations = ref<(Cp|Mate)[]>([])
 const moveEvaluations = ref<(MoveEvaluation|null)[]>([])
 
 const games = ref<ChessGame[]>([])
 
-const chessComUsername = useStorage('chesscomusername', 'juliangjn', localStorage)
+const username = useStorage('username', 'juliangjn', localStorage)
 
 onMounted(async () => {
   await loadUser()
   loadGame(games.value[0])
   initStockfish()
 })
-
+const loadingGames = ref(false)
 const loadUser = useDebounceFn(async () => {
-  let chessAPI = new ChessWebAPI();
-  games.value = (await chessAPI.getPlayerCompleteMonthlyArchives(chessComUsername.value, 2025, 8)).body.games.reverse()
+  loadingGames.value = true
+  if (provider.value === 'chess.com') {
+    let chessAPI = new ChessWebAPI();
+    games.value = (await chessAPI.getPlayerCompleteMonthlyArchives(username.value, 2025, 8)).body.games.slice(0,15).reverse()
+  } else if (provider.value === 'lichess') {
+    const res = await fetch(`https://lichess.org/api/games/user/${username.value}?&max=10&pgnInJson=true&sort=dateDesc&clocks=true`, {
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+
+    games.value = []
+    for (const game of (await res.text()).split("\n").filter(a => a).map(r => JSON.parse(r))) {
+      const chessInstance = new Chess()
+      chessInstance.loadPgn(game.pgn)
+      games.value.push({
+        pgn: game.pgn,
+        black: {
+          username: game.players.black.user?.name || 'Anonymous',
+          rating: game.players.black.rating,
+          result: game.winner === 'black' ? 'win' : (game.status === 'draw' ? 'draw' : 'checkmated')
+        },
+        white: {
+          username: game.players.white.user?.name || 'Anonymous',
+          rating: game.players.white.rating,
+          result: game.winner === 'white' ? 'win' : (game.status === 'draw' ? 'draw' : 'checkmated')
+        },
+        rated: game.rated,
+        fen: chessInstance.fen()
+      })
+    }
+  } else if (provider.value === 'pgn') {
+    games.value = localGames.value
+  }
+  loadingGames.value = false
 }, 1000)
 
-watch(chessComUsername, () => loadUser())
+const localGames = useStorage<ChessGame[]>('localgames', [], localStorage)
+
+watch(localGames, () => {
+  if (provider.value === 'pgn') {
+    games.value = localGames.value
+  }
+})
+
+const localPgn = ref('')
+const addLocalGame = () => {
+  if (!localPgn.value) return
+  const chessInstance = new Chess()
+  chessInstance.loadPgn(localPgn.value)
+  const parsed = pgnParse(localPgn.value, {startRule: 'game'}) as any
+  localGames.value.unshift({
+    pgn: localPgn.value,
+    black: {
+      username: parsed?.tags?.Black || 'Black',
+      rating: parsed?.tags?.BlackElo || 0,
+      result: parsed?.tags?.Result === '0-1' ? 'win' : (parsed?.tags?.Result === '1-0' ? 'checkmated' : 'draw')
+    },
+    white: {
+      username: parsed?.tags?.White || 'Black',
+      rating: parsed?.tags?.WhiteElo || 0,
+      result: parsed?.tags?.Result === '1-0' ? 'win' : (parsed?.tags?.Result === '0-1' ? 'checkmated' : 'draw')
+    },
+    rated: false,
+    fen: chessInstance.fen()
+  })
+  localPgn.value = ''
+}
+
+watch(username, () => loadUser())
+watch(provider, () => loadUser())
 
 
 const getEvalForPos = async (fen: string, invertNumbers: boolean) => {
@@ -81,7 +155,7 @@ const loadGame = (game: ChessGame) => {
   const parsed = pgnParse(game.pgn, {startRule: 'game'}) as any
 
   moves.value = parsed.moves.map((m: any) => m.notation.notation)
-  clockTimes.value = parsed.moves.map((m: any) => m.commentDiag.clk)
+  clockTimes.value = parsed.moves.map((m: any) => m.commentDiag?.clk)
 
   chessboard.value!.chess.load(game.fen)
   chessboard.value!.updateBoard()
@@ -160,85 +234,26 @@ onKeyStroke('ArrowUp', () => {
     <div class="flex justify-center w-full h-full gap-3">
       <div class="border border-neutral-200 rounded-xl h-full overflow-auto p-2">
         <div class="flex flex-col gap-5">
-          <input v-model="chessComUsername" class="p-2 px-3 border border-neutral-200 rounded-md" />
-          <button @click="loadGame(game)" v-for="game of games.slice(0, 10)" class="flex gap-2 items-center cursor-pointer">
-            <Chessboard assets-path="/assets/piece/kiwen-suwi/" readonly width="100px" :fen="game.fen" />
-            <div>
-              <div class="flex flex-wrap gap-1 mb-2">
-                <div class="flex gap-1 items-center bg-neutral-100 rounded-full p-0.5 px-2 text-sm">
-                  <i class="ti ti-clock" />
-                  <span>{{ Number(game.time_control) / 60 }} min</span>
-                </div>
-                <div class="flex gap-1 items-center bg-neutral-100 rounded-full p-0.5 px-2 text-sm">
-                  <i class="ti ti-calendar-event" />
-                  <span></span>
-                </div>
-              </div>
-              <div class="flex flex-col gap-2">
-                <div class="flex gap-1 items-center">
-                  <i :class="{'text-green-800': game.white.result === 'win', 'text-red-800': game.white.result === 'checkmated'}" class="ti ti-chess-king" />
-                  <span class="text-sm">{{game.white.username}}</span>
-                  <span class="text-sm opacity-40">{{game.white.rating}}</span>
-                </div>
-                <div class="flex gap-1 items-center">
-                  <i  :class="{'text-green-800': game.black.result === 'win', 'text-red-800': game.black.result === 'checkmated'}" class="ti ti-chess-king" />
-                  <span class="text-sm">{{game.black.username}}</span>
-                  <span class="text-sm opacity-40">{{game.black.rating}}</span>
-                </div>
-              </div>
-            </div>
-          </button>
+          <div class="flex gap-2">
+            <input v-if="provider !== 'pgn'" v-model="username" class="p-2 px-3 border border-neutral-200 rounded-md" placeholder="Chess.com Username" />
+            <select v-model="provider" class="p-2 px-2 border border-neutral-200 rounded-md" :class="{'w-full': provider === 'pgn'}">
+              <option v-for="p of providers" :key="p" :value="p">{{p}}</option>
+            </select>
+          </div>
+          <template v-if="provider === 'pgn'">
+            <textarea v-model="localPgn" class="p-2 px-3 border border-neutral-200 rounded-md" placeholder="PGN" />
+            <button @click="addLocalGame" class="p-2 bg-black text-white w-full rounded-md">Add</button>
+          </template>
+          <LoadingContainer v-if="loadingGames" />
+          <GameEntry v-for="game of games" :game @click="loadGame(game)" />
         </div>
 
       </div>
-      <div class="w-4  h-full border border-neutral-200 rounded-full relative">
-        <div
-          class="w-full bg-neutral-700 rounded-full transition-all"
-          :style="{
-            height: `${cpToPercent(positionEvaluations[currentMoveIndex]?.cp||0)}%`
-          }"
-        />
-        <div v-if="positionEvaluations[currentMoveIndex]?.type === 'mate'" class="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] bg-neutral-800 border border-neutral-700 text-white px-1.5 rounded-full text-sm text-nowrap">
-          M{{
-            // Why is typescript failing here???
-            // @ts-ignore
-            Math.abs(positionEvaluations[currentMoveIndex].mate)
-          }}
-        </div>
-      </div>
+      <EvalBar :evaluation="positionEvaluations[currentMoveIndex]" />
       <div class="flex gap-2 flex-col justify-between">
-        <div class="flex justify-between">
-          <div class="flex gap-2">
-            <div class="w-[2.5rem] aspect-square rounded-full border border-neutral-200 flex items-center justify-center">
-              <span>{{blackPlayer.username[0]}}</span>
-            </div>
-            <span class="flex gap-2">
-              <span>{{blackPlayer.username}}</span>
-              <span class="opacity-50">{{blackPlayer.rating}}</span>
-            </span>
-          </div>
-          <div class="border border-neutral-200 rounded-md px-3 flex items-center justify-center"  :class="{'bg-neutral-800 text-white': currentMoveIndex % 2 === 1}">
-            <span>{{blackPlayer.time}}</span>
-          </div>
-        </div>
-
+        <BoardUser :player="blackPlayer" />
         <Chessboard ref="chessboard" assets-path="/assets/piece/maestro/" width="700px" />
-
-
-        <div class="flex justify-between">
-          <div class="flex gap-2">
-            <div class="w-[2.5rem] aspect-square rounded-full border border-neutral-200 flex items-center justify-center">
-              <span>{{whitePlayer.username[0]}}</span>
-            </div>
-            <span class="flex gap-2">
-              <span>{{whitePlayer.username}}</span>
-              <span class="opacity-50">{{blackPlayer.rating}}</span>
-            </span>
-          </div>
-          <div class="border border-neutral-200 rounded-md px-3 flex items-center justify-center" :class="{'bg-neutral-800 text-white': currentMoveIndex % 2 === 0}">
-            <span>{{whitePlayer.time}}</span>
-          </div>
-        </div>
+        <BoardUser :player="whitePlayer" />
       </div>
 
       <div class="border border-neutral-200 rounded-xl h-full overflow-auto">
